@@ -46,11 +46,11 @@ transform_data_dir = os.path.join(home_dir, "data", "transform_data")
 # 文件定义
 action_02 = os.path.join(download_data_dir, "JData_Action_201602.csv")
 action_03 = os.path.join(download_data_dir, "JData_Action_201603.csv")
-action_04 = os.path.exists(download_data_dir, "JData_Action_201604.csv")
-comment_file = os.path.exists(download_data_dir, "JData_Comment.csv")
+action_04 = os.path.join(download_data_dir, "JData_Action_201604.csv")
+comment_file = os.path.join(download_data_dir, "JData_Comment.csv")
 product_file = os.path.join(download_data_dir, "JData_Product.csv")
-user_file = os.path.exists(download_data_dir, "JData_User.csv")
-transform_user_file = os.path.exists(transform_data_dir, "user.csv")
+user_file = os.path.join(download_data_dir, "JData_User.csv")
+transform_user_file = os.path.join(transform_data_dir, "user.csv")
 
 # mkdir(data_dir)
 assert os.path.exists(download_data_dir)
@@ -86,6 +86,43 @@ def user_file_transform():
     df["user_register_diff"] = (df['user_reg_tm'] - start_date).dt.days
     df.to_csv(transform_user_file, index=False)
 
+def product_feature_from_action(file_name, chunk_size=100000):
+    reader = pd.read_csv(file_name, header=0, iterator=True)
+    chunks = []
+    while True:
+        try:
+            chunk = reader.get_chunk(chunk_size)[["sku_id", "type"]]
+            chunks.append(chunk)
+        except StopIteration:
+            logging.info("Iteration stopped by user")
+            break
+    df = pd.concat(chunks, ignore_index=True)
+    df_new = df.groupby(["sku_id"], as_index=True)["type"].apply(type_count)
+    return df_new.drop_duplicates("sku_id")
+
+def merge_action_data():
+    df_ac = []
+    df_ac.append(product_feature_from_action(action_02))
+    df_ac.append(product_feature_from_action(action_03))
+    df_ac.append(product_feature_from_action(action_04))
+    df_action_all = pd.concat(df_ac, ignore_index=True)
+    df_action_all_sku = df_action_all.groupby(['sku_id'], as_index=False).sum()
+
+    df_action_all['buy_addcart_ratio'] = df_action_all['buy_num'] / df_action_all['addcart_num']
+    df_action_all['buy_browse_ratio'] = df_action_all['buy_num'] / df_action_all['browse_num']
+    df_action_all['buy_click_ratio'] = df_action_all['buy_num'] / df_action_all['click_num']
+    df_action_all['buy_favor_ratio'] = df_action_all['buy_num'] / df_action_all['favor_num']
+
+
+
+
+
+
+def product_transform():
+    df = pd.read_csv(product_file, header=0)
+    df_ac = merge_action_data()
+
 
 if __name__ == "__main__":
     user_file_transform()
+    create_item_table()

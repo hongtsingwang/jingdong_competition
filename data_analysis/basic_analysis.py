@@ -7,24 +7,16 @@
 # 
 # =======================================================
 
+import logging
 import os
 import sys
-import argparse
-import logging
-import matplotlib
-import matplotlib.pyplot as plt
 
 import pandas as pd
-import numpy as np
+from matplotlib.pyplot import bar, ylabel, tight_layout, figure, legend, xticks, xlabel, title
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument()
-# args = parser.parse_args()
-
-# output = args.output
 logging.basicConfig(
     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
     level=logging.DEBUG,
@@ -52,14 +44,14 @@ user_file = os.path.join(download_data_dir, "JData_User.csv")
 transform_user_file = os.path.join(transform_data_dir, "user.csv")
 
 
-def get_chunks(reader, chunk_size):
+def get_chunks(reader, chunk_size, field_list=[]):
     chunks = []
     while True:
         try:
-            chunk = reader.get_chunk(chunk_size)[["user_id", "sku_id", "type", "time"]]
+            chunk = reader.get_chunk(chunk_size)[field_list]
             chunks.append(chunk)
         except StopIteration:
-            logging.info("Iteration mannually stopped!")
+            logging.info("Iteration manually stopped!")
             break
     return chunks
 
@@ -108,19 +100,19 @@ bar_width = 0.2
 # 透明度
 opacity = 0.4
 
-plt.bar(df_user['weekday'], df_user['user_num'], bar_width,
-        alpha=opacity, color='c', label='user')
-plt.bar(df_item['weekday'] + bar_width, df_item['item_num'],
-        bar_width, alpha=opacity, color='g', label='item')
-plt.bar(df_ui['weekday'] + bar_width * 2, df_ui['user_item_num'],
-        bar_width, alpha=opacity, color='m', label='user_item')
+bar(df_user['weekday'], df_user['user_num'], bar_width,
+    alpha=opacity, color='c', label='user')
+bar(df_item['weekday'] + bar_width, df_item['item_num'],
+    bar_width, alpha=opacity, color='g', label='item')
+bar(df_ui['weekday'] + bar_width * 2, df_ui['user_item_num'],
+    bar_width, alpha=opacity, color='m', label='user_item')
 
-plt.xlabel('weekday')
-plt.ylabel('number')
-plt.title('A Week Purchase Table')
-plt.xticks(df_user['weekday'] + bar_width * 3 / 2., (1, 2, 3, 4, 5, 6, 7))
-plt.tight_layout()
-plt.legend(prop={'size': 9})
+xlabel('weekday')
+ylabel('number')
+title('A Week Purchase Table')
+xticks(df_user['weekday'] + bar_width * 3 / 2., (1, 2, 3, 4, 5, 6, 7))
+tight_layout()
+legend(prop={'size': 9})
 
 
 def purchase_statistics_each_day():
@@ -143,21 +135,21 @@ def purchase_statistics_each_day():
     # 天数
     day_range = range(1, len(df_user['day']) + 1, 1)
     # 设置图片大小
-    plt.figure(figsize=(14, 10))
+    figure(figsize=(14, 10))
 
-    plt.bar(df_user['day'], df_user['user_num'], bar_width,
-            alpha=opacity, color='c', label='user')
-    plt.bar(df_item['day'] + bar_width, df_item['item_num'],
-            bar_width, alpha=opacity, color='g', label='item')
-    plt.bar(df_ui['day'] + bar_width * 2, df_ui['user_item_num'],
-            bar_width, alpha=opacity, color='m', label='user_item')
+    bar(df_user['day'], df_user['user_num'], bar_width,
+        alpha=opacity, color='c', label='user')
+    bar(df_item['day'] + bar_width, df_item['item_num'],
+        bar_width, alpha=opacity, color='g', label='item')
+    bar(df_ui['day'] + bar_width * 2, df_ui['user_item_num'],
+        bar_width, alpha=opacity, color='m', label='user_item')
 
-    plt.xlabel('day')
-    plt.ylabel('number')
-    plt.title('February Purchase Table')
-    plt.xticks(df_user['day'] + bar_width * 3 / 2., day_range)
-    plt.tight_layout()
-    plt.legend(prop={'size': 9})
+    xlabel('day')
+    ylabel('number')
+    title('February Purchase Table')
+    xticks(df_user['day'] + bar_width * 3 / 2., day_range)
+    tight_layout()
+    legend(prop={'size': 9})
 
 
 def spec_ui_action_data(fname, user_id, item_id, chunk_size=100000):
@@ -189,5 +181,5 @@ def explore_user_item_via_time():
     df_ac = pd.concat(df_ac, ignore_index=False)
     print(df_ac.sort_values(by='time'))
 
-explore_user_item_via_time()
 
+explore_user_item_via_time()
